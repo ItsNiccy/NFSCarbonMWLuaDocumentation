@@ -1,0 +1,427 @@
+NFS Carbon Lua documentation (and to some extent, MW 2005).
+Initially made by ElNico.
+And others if they wish to contribute.
+
+Other contributors:
+- name goes here
+
+If there is any incorrect information, please feel free to let me know, and it will be corrected, or you can even correct it yourself if you want.
+All that is asked, is that you be kind and respectful.
+
+If there is ANYTHING, you would like to add, feel free to do so.
+If you've made any contributions, just add your name to the other contributors section.
+This is currently nowhere near complete, tonnes more still needs to be added.
+
+Resources used for the documentation:
+- The results of FAFO.
+- NFSMW and NFSC Vanilla Game Lua scripts.
+- A few NFS Undercover PS2 scripts.
+- A list of functions provided by rybetasz.
+- heyitsleo's NFSMW Lua Script Editing video from 2020 https://youtu.be/iLsVsksi1HM?si=BKnGUELqlj3-BImL
+- NFSCO lua dump (scripts made by rx + any other possible contributors).
+
+Most of the information here will be for Carbon. 
+You can pretty much append the phrase "and by extension, MW" onto the end of each sentence, 
+as they use basically the same Lua system, and share *most* of the same functions.
+Carbon obviously has a lot of functions for Canyon, crews, and other online type game modes and also
+Game.QuitToCarClassSelectScreen(), which warps you to the screen where you choose your starter car.
+
+The Basics:
+NFSMW and Carbon use BlackBox's modified version of Lua 5.0.1 (*Unsure about ProStreet onwards).
+Undercover PS2/Wii (aka Exient Undercover) likely used Carbon's Lua system as a base, though other changes were made, such as new functions, 
+renaming existing ones, new stategraphs for takedown, wantedevent and other stuff, and new Mxxxxxxxxxx functions (MNotifyDamageRatio, for example).
+You can learn all about the base Lua language here.
+https://www.lua.org/manual/5.0/
+
+NOTE:
+EVERYTHING is case sensitive.
+For example:
+Game.JumpToSafehouse() will crash the game.
+Game.JumpToSafeHouse() works correctly, it warps you to the safe house.
+
+More Basics:
+With MW/Carbon Lua modding, is it's half Lua scripting, half Vault editing.
+You can have a perfectly written Lua script, but if you get the vault stuff wrong, at best, the script just wont work, or the game will crash.
+These include:
+
+- handler_owner (where the messagehandler node points to)
+- message_id (vlt memory dec of internal game function being utilized)
+- stateref (in what gameplay state the script is for) (you can check all the gameplay states in gameplay -> baseelement -> state) (these go in the stateref field, for example: stategraph_basicrace_racing)
+- transitionlist (what the state will be changed to, if you are changing the state in the lua script) (do not add transitionlist field if state is not being changed)
+- Vault (leave as gpcore for general event type logic, or change to gameplayvault of event if it's for a specific event, just like with startgrids and other stuff).
+
+compile command format:
+luac -s -o x.blob x.lua
+
+NOTE:
+You need to compile them into a .blob (Binary Large Object) file in order to add them through OGVI.
+Otherwise you can technically compile them into whatever file format you want (for example: .bin)
+
+decompile command format:
+luadec -f -o x.lua x.blob
+
+Alternatively, you can simply drag and drop a bytecode onto the decompiler executeable.
+
+messagehandler nodes:
+
+(Most Wanted 2005)
+If the name of your messagehandler node doesn't have any slashes, 
+then at the start of the lua source file,
+you can simply have the name of the messagehandler node that the bytecode will be attached to.
+for example:
+name_of_your_node = function(param0, param1, param2)
+
+(Carbon and Exient Undercover) (Unsure about ProStreet onwards)
+For Carbon and Exient Undercover, the function header needs to be the VLT Memory HEX of the messagehandler node it's attached to.
+It's done in the following format:
+h_VLTMEMORYHEX = function(param0, param1, param2)
+
+For example::
+wantedevent/stategraph_basicrace_racing_handler_notifymilestoneprogress
+VLT Memory HEX is this:
+F83F94A3 or 0xF83F94A3 depending on which NFS Hasher was used.
+Header looks like this:
+h_F83F94A3 = function(param0, param1, param2)
+
+You can use the following tools.
+- NFS Hasher v2 by nfsu360 and or NFS Hasher v3 by CiPHER.
+- The hasher avaliable within OGVI or Binary/Binarius
+- Qalculate! https://qalculate.github.io/ (useful for getting DEC numbers) (Avaliable on Linux, Windows, MacOS)
+
+message_id:
+these are Vlt Memory DEC of Mxxxxxxxxxx functions (for example, MTriggerEnter).
+These are internal functions that basically determine what the script will be for.
+If you're, for example, making a takedown style gamemode, you will need to put
+MNotifyVehicleDestroyed into NFS-Hasher v3 and get the VLT Memory DEC, which will be 83708443.
+83708443 is what you put as the message_id.
+Basically, it will notify whenever a vehicle has been destroyed, and execute any script logic.
+
+The parameters:
+
+With NFSMW/Carbon Lua there are 3 parameters:
+- param0.
+- param1.
+- param2.
+
+In the script, you can re-name them to whatever you want, 
+AS LONG as it follows the same order of (param0, param1, param2), 
+and they are also applied to functions within the script.
+for example:
+h_VLTMEMORYHEX = function(vault, specific, context)
+h_VLTMEMORYHEX = function(vault, nikki, darius)
+
+param0 refers to gameplay vault (vlt) fields and data.
+for example param0.MilestoneName or param0.ThreshholdValue.
+This will read the data for the associated fields.
+
+param1 and param2 refer to other types of in game logic, such as context, element and lots more.
+
+The difference between param1 and param2.
+Generally speaking, some (but not all) param1 functions can only be used with their corresponding message_id, whereas param2 functions can be used across different scripts.
+For example:
+- param1.ValueReached can only be used within an MNotifyMilestoneProgress handler (Maybe also MNotifyMilestoneReached, but hasn't been tested).
+- param1.Placing can only be used with MNotifyRacePlacement.
+- param1.RepPoints can only be used with MNotifyPlayerRep.
+
+Some param1 functions include (not all of them, as idk all of them):
+- param1.Name (often used for timers)
+- param1.Sender
+- param1.RepPoints
+- param1.ValueReached
+- param1.SpeedKmh
+- param1.Element
+- param1.Racer
+- param1.Perpetrator
+- param1.MilestoneName
+- param1.Placing
+- param1.SimTime
+- param1.TrapActivity
+- param1.TimeElapsed
+- param1.IsActivelyRacing
+- param1.TimeRemaining
+
+
+Some param2 functions include (not all of them, as idk all of them):
+- param2.PlayerHasWon = true/false
+- param2.WentOverboard = true/false (Carbon only, for when you fall off a canyon)
+- Param2.PassedMilestone = true/false
+- param2.ShowTips = true/false
+- param2.ShowPauseMenu = true/false
+- param2.ShowPostRace = true/false
+- param2.SummaryVisible = true/false
+- param2.AcquisitionShown = true/false (Might be Carbon only, idk)
+- param2.Abandoned = true/false
+- param2.PlayerBusted = true/false
+- param2.CheckAllRacersComplete = true/false
+- param2.CareerRace = true/false
+- param2.HandleICEMessage = true/false
+- param2.SuddenDeathMode = true/false
+- param2.RaceOverMessageDuration = seconds
+- param2.InRace
+- param2.NumWorldRaces -- Number of world races for a race bin.
+- param2.NumRacesWon -- Number of races you have won for a race bin.
+- param2.NumRivalRaces -- Number of boss races for a race bin. (non functional in carbon as boss races are tied to area)
+- param2.NumRivalRacesWon -- Number of boss races you have won for a race bin. (non functional in carbon as boss races are tied to area)
+- param2.PlayerBounty  -- Total amount of bounty on the players profile.
+- param2.NumChallengesPassed -- Number of open world milestones you have completed for a race bin. (Useless in carbon as milestones don't save)
+- param2.Timeout
+- param2.NumTraps 
+- param2.NumRacers
+- param2.NumCheckpoints
+- param2.NumberFinished
+- param2.PostRaceTime
+- param2.LapsLeft
+- param2.RecordThresh
+- param2.SuddenDeathPenalty
+- param2.TrapRecords
+- param2.Element
+- param2.InsideTrigger
+- param2.Character
+- param2.CameFromRacing
+- param2.CameFromNIS
+- param2.Dist
+- param2.MilestoneName = ""
+- param2.MilestoneThresh = 0
+- param2.BiggerIsBetter = true
+- param2.Handle
+
+Carbon Cross Chase param2 functions:
+- param2.HUStartTime
+- param2.HUTimeElapsed
+- param2.FinishedPercent
+- param2.CurrentTick
+- param2.CurrentMessageStartTick
+- param2.CurrentStatus
+- param2.MessageRefreshInterval
+- param2.TickInterval
+- param2.MaxHUSecs
+- param2.TooSlowFactor
+- param2.SlowFactor
+- param2.TimeLimit
+- param2.RaceTimeElapsed
+
+Some possible param1 and or param2 functions.
+These are just from carbons exe, so some of them might even be completely unrelated to Lua.
+
+- ButtonName
+- TimeIsLimited
+- TimeStep
+- TurnNumber
+- InPursuit
+- PassingRacer
+- PassedRacer
+- TriggerID
+- CopHandle
+- Radius
+- Duration
+
+All of the Mxxxxxxx functions from Carbon's exe:
+NOTE: Not all of them are meant to be used as a message_id.
+For example, MSetCopAutoSpawnMode isn't meant to be used as a message_id.
+- MWingmanSuccessful 2219112040
+- MWingmanNotify 2148341672
+- MWingmanActivated   2492097096
+- MUnspawnCop 4007582101 (not recommended to use for message_id)
+- MTriggerInside  3098187571
+- MTriggerExit    2804828955
+- MTriggerEnter 1168026613
+- MTerminateEncounter 3852877753 (unsure how to use)
+- MStateExit 2617379860
+- MStateEnter 1578804418
+- MSpeedyNotify   2673319847
+- MSpawnTraffic 1037991454 (not recommended to use for message_id)
+- MSpawnCop 4042706161 (not recommended to use for message_id)
+- MSetTrafficSpeed 2049427787 (not recommended to use for message_id)
+- MSetCopsEnabled 3397242070 (not recommended to use for message_id)
+- MSetCopAutoSpawnMode 3437204752 (not recommended to use for message_id)
+- MRestartRace   1827039904 
+- MReqRoadBlock 744966853 (not recommended to use for message_id) 
+- MReqBackup 4089592274 (not recommended to use for message_id)
+- MQuitToFrontEnd 2067460896 (not recommended to use for message_id)
+- MPursuitOver 2530376594
+- MPursuitBreaker 3396224902
+- MPostBossFlowCameraFinished 3797128748
+- MPlayerEnterPursuit 3253218778
+- MPIPWindowReady 3839708017
+- MPerpEscaped    2360683030
+- MPerpBusted 3458771824
+- MPathyNotify    642606937
+- MNotifyVehicleDestroyed 83708443
+- MNotifyTurnStart    2549085507
+- MNotifyTurnOver 4285748562
+- MNotifyTimer    43025636
+- MNotifyTerritoryRaceOver   1924363421 
+- MNotifySpeedTrap    1601354216
+- MNotifySpeechStatus 610421485
+- MNotifySimTick  796965791
+- MNotifyRoamStarted  1985586573
+- MNotifyRawButtonPress   1799587157
+- MNotifyRaceTimeSecTick  1047331085
+- MNotifyRaceTimeExpired  2854389780
+- MNotifyRaceTime 2571052138
+- MNotifyRaceStarted  2641917799
+- MNotifyRacePlacement    304908785
+- MNotifyRaceAbandoned    3253213761
+- MNotifyPlayerRep   790478682
+- MNotifyPassingMove  1688528455
+- MNotifyOnlineRaceOver   2976216768
+- MNotifyMusicFlow    2444257898
+- MNotifyMovieFinished   2310747902 
+- MNotifyMilestoneReached 1602036899
+- MNotifyMilestoneProgress 3387604934   
+- MNotifyMessageDone  1381518535
+- MNotifyLapFinished  1047469058
+- MNotifyKnockedOut   223164645
+- MNotifyFinished 250973641
+- MNotifyFadeToBlackDone  2488546235
+- MNotifyEnterCanyonDropZone  3018231656
+- MNotifyEngineBlown  1539526172
+- MNotifyCollision    671889782
+- MNotifyChallengePassed  649810525
+- MNotifyCellCallStarted  1580028668
+- MNotifyCellCallComplete 598977488
+- MNotifyAudioTransitionStarted   3143230981
+- MNotifyAudioTransitionDone  1356829792
+- MNISFlagGirlStart   1280179216
+- MNISComplete    1714975068
+- MMiscSound  3542260185
+- MLoadingComplete   832116173 
+- MLaunchPIP 711239076 (unsure how to use, not recommended to use for message_id)
+- MJumpCut 1024988706 (unsure how to use)
+- MJackKnife 1902334609 (unsure how to use)
+- MICECarAttach   4002720322
+- MICECameraFinished  3705580309
+- MGenericCameraFinished  4159993144
+- MGamePlayMoment 3129973064
+- MFreezeCamera   1084172463
+- MForcePursuitStart 3868014025 (not recommended to use for message_id) 
+- MFlowReadyForOutro  1374140741
+- MEnterSafeHouse 3638903184
+- MEnterRepeatRace    1175525779
+- MEnterRaceOverFlow  3858601954
+- MEnterPostRaceFlow  1666122576
+- MEnterPostCareerRaceFlow    3263684862
+- MEnteringGameplay   854777867
+- MEnterFreeRoam  2144290255
+- MEnterCooldown  1561043241
+- MDriverNISComplete  1018674296
+- MDeclineEnterCareerEvent    2289098392
+- MCountdownDone  3650069127
+- MCopJoinedPursuit 1968142059 (unsure how to use, not recommended to use for message_id)
+- MControlPathfinder  2129543566
+- MCanyonNotify   3848158080
+- MBreakerStopCops 1023914457 (not recommended to use for message_id)   
+- MBlockyNotify   3916666371
+- MAudioReflection    813473825
+- MAIEngineRev 4083327086 (unsure how to use, not recommended to use for message_id)
+- MAcceptEnterCareerEvent 2941011528
+
+Compiler input arguments:
+  -        process stdin
+  -l       list
+  -o name  output to file `name' (default is "luac.out")
+  -p       parse only
+  -s       strip debug information in dump
+  -v       show luac version
+  --       stop handling options
+
+Decompiler input arguments:
+  -        process stdin
+  -d       output information for debugging the decompiler
+  -f       decompile multiple files (luadec file1 file2 file3...)
+  -o       sets the output file name (default: 'luadec.out')
+  -p       only parse file for errors
+  -s       strips debug info
+  -v       shows luadec version
+  --       stop handling options
+
+Here are some game functions that have been documented by rybetasz.
+NOTE: Some descriptions have been slightly altered to provide additional information.
+Additional functions have also been added and documented.
+
+Game.ShowPauseMenu()                 : Opens the standard in-game pause menu.
+Game.ShowTriggerIcon(trigger)        : Displays the interaction icon for a specific world trigger.
+Game.HideTriggerIcon(trigger)        : Removes the interaction icon for a specific world trigger.
+Game.NotifyCountdownDone()           : Signals the game engine that the start countdown has finished.
+
+[ CATEGORY: RACE & ACTIVITY LOGIC ]
+Game.AwardPoints(racerIdx, points)   : Grants a specific amount of points to a racer.
+Game.ChallengeCompleted()            : Marks the current challenge/event as successfully finished. Used in MW open world Milestones.
+Game.ChallengeComplete(element)      : Marks the current challenge/event as successfully finished. Used in MW and Carbon CS Pursuit races.
+Game.UnlockRace(activity)            : Unlocks a specific race event for the player.
+Game.NotifyActivityFinished(act)     : Sends a notification that the specified activity is over.
+Game.NotifyRaceFinished(element)     : Sends a notification that the specified race/event/activity is over.
+Game.AllRacersDone()                 : Returns true if every participant has finished the race.
+Game.AllHumanPlayersDone()           : Returns true if all local/online human players have finished.
+Game.GetSimTime()                    : Returns the current internal simulation timestamp.
+Game.SetRaceExpired()                : Sets the race expired, as if you had run out of time. Useful for setting a lose condition.
+Game.AbandonRace()                   : Abandons the current race.
+Game.KnockoutRacer(index)            : Knocks out a specific racer, like in Lap Knockout.
+Game.TotalRacer(index)               : Destroys a specified racer vehicle.
+Game.BlowEngine(element)             : Destroys the engine of a specified element.
+Game.ShowGPS(bool)                   : Shows the gps arrow at the top of the screen.
+Game.NavigatePlayerTo(goalTrigger, realTarget, maxDeviation, showArrow): The GPS arrow will point towards a specific trigger or marker. Use the format (goalTrigger, goalTrigger, maxDeviation, showArrow) to skip needing a marker.
+RaceStatus:SetHasBeenWon(bool)       : Sets whether the race is marked as won or not. 
+RaceStatus:SetIsRestartAllowed(bool) : Enables or disables the ability to restart the race/event.
+RaceStatus:SetActivelyRacing(bool)   : Sets whether the player is racing or not.
+RaceStatus:ClearCheckpoints()        : Clears all current event checkpoints.
+RaceStatus:ResetRaceData()           : Resets all current race data.
+RaceStatus:SetRoaming()              : Sets the player in free roam mode.
+
+[ CATEGORY: RACER & PLAYER SENSORS ]
+Game.GetRacerIndex(element)          : Returns the index ID of a specific racer object.
+Game.GetPlayerElement(index)         : Returns the object/entity associated with a player index.
+Game.GetRacerElement(index)          : Returns the object/entity associated with a racer index.
+Game.GetRacerCharacter(index)        : Returns the character profile ID assigned to a racer.
+Game.RacerIsHuman(index)             : Checks if the specified racer is controlled by a human.
+Game.PlayerIsLocal(index)            : Checks if the player is on the local machine (not network).
+Game.SimableDistance(elem, marker)   : Calculates the distance between an object and a world marker.
+Game.SimableAngle(elem, marker)      : Calculates the relative angle between an object and a marker.
+Game.GetSimableSpeedKmh(element)     : Returns the speed of an element in Kilometres Per Hour.
+Game.GetRacerPctComplete(index)      : Returns the percentage complete of a specified racer.
+Game.AllowFinishLine(bool)           : Allows or disables the finish line.
+Game.EnableTrigger(triggername, bool): Enables or disables a specific trigger. Useful for disabling a trigger, then enabling it once a condition has been met.
+
+[ CATEGORY: POLICE & WORLD ]
+Game.SetWorldHeat(heat level)        : Sets the heat level of your current vehicle to a specified heat level.
+Game.ForcePursuitStart(heat level)   : Forces a pursuit start of a specified heat level. leave empty to start a pursuit at the players current heat level.
+Game.SpawnCop(spawnmarker, pvehicle, inpursuit, inroadblock) : Spawns a specified police vehicle at a specified marker.
+Game.SpawnCop(inpursuit, inroadblock) : Spawns a cop near your current vehicle location. The cop will be from your current heat level.
+Game.ResetCopsForRestart()           : Clears all active police units to prepare for a race restart.
+Game.AwardPlayerBounty(bounty)       : Directly adds bounty points to the player's profile.
+Game.WarpToMarkerWhileRoaming(m)     : Teleports the player to a marker during Free Roam mode.
+Game.IsActiveSpeedtrap(trigger)      : Checks if a specific speed trap trigger is currently active.
+Game.IsActiveMenuGate(trigger)       : Checks if a shop or event entrance gate is active.
+Game.ReloadWorld()                   : leave empty to warp to safehouse and respawn at safehouse.
+Game.ReloadWorld(param0)             : leave as is to reload and re-start the specific event.
+EBailPursuit()                       : Bails the pursuit entirely and clears all active police units. Skips needing to enter and finish cooldown mode.
+ECellCall(id number)                 : Triggers a cell phone call of the specified id.
+EAddSMS(id number)                   : Adds an SMS of the specified id and shows it to the player. 
+Bin.GetNumRacesWon(BinIndex)         : Returns the number of races won for a specified race bin.
+Bin.GetNumChallengesPassed(BinIndex) : Returns the number of open world milestones that have been completed for a specified race bin.
+Game.GetPlayerBounty()               : Returns the players total amount of bounty for their profile. 
+
+[ CATEGORY: NETWORK & SYSTEMS ]
+Game.IsOnlineGame()                  : Returns true if the current session is an online match.
+Game.IsLANGame()                     : Returns true if the session is running over a local network.
+Game.AllowEngageEvents(bool)         : Enables or disables the ability to start world events.
+Game.AllowMenuGates(bool)            : Enables or disables the ability to enter shops/safehouses.
+Game.AllowEngageSafehouse(bool)      : Specifically toggles safehouse interaction.
+Game.DoSpecialSetup()                : Executes internal engine-level setup for complex events.
+Game.DoSpecialFinalization()         : Executes cleanup and final logic after a special event.
+Game.SetTimer(name, interval)        : Creates a custom named timer for script logic.
+Game.SkipCareerIntro()               : Forcefully skips the opening cinematics of Career mode.
+
+[ CATEGORY: MUSIC ]
+Music.ForceLicensedMusic()           : Forces EA Trax music. 
+Music.ForcePursuitMusic()            : Forces Pursuit Music.
+Music.ForceCanyonMusic()             : Forces Canyon Music. Carbon only, obviously.
+ETerminateMusic()                    : Kills music entirely. No music will play.
+
+[ CATEGORY: HUD DISPLAYS ]
+Debug.ShowScreenMessage(message,)    : Shows a small message display in the bottom right corner, above the speed/tachometer. Can display text, and param0, param1 and param2 functions.
+Debug.Print("")                      : Doesn't seem to work in release builds, used during development.
+HUD.ShowMessage("MESSAGE_TRANSLATION_NAME") : Displays text in the middle of the screen for 2.5 seconds.
+HUD.ShowLoopingMessage("MESSAGE_TRANSLATION_NAME", value to display) : Constantly displays a message on the screen, with a value displayed underneath if assigned. Often used for displaying time remaining.
+HUD.HideLoopingMessage()             : Hides any looping messages that are currently active.
+HUD.ShowTimeExtension()              : Used for showing time bonus, such as in tollbooth/checkpoint races.
