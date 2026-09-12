@@ -139,6 +139,7 @@ Some param1 functions include (not all of them, as idk all of them):
 - param1.TimeElapsed
 - param1.IsActivelyRacing
 - param1.TimeRemaining
+- param1.AreaName (carbon only)
 
 
 Some param2 functions include (not all of them, as idk all of them):
@@ -184,6 +185,21 @@ Some param2 functions include (not all of them, as idk all of them):
 - param2.MilestoneThresh = 0
 - param2.BiggerIsBetter = true
 - param2.Handle
+- param2.DoneFirstSMS = true/false
+- param2.DoneSecondSMS = true/false
+- param2.DoneThirdSMS = true/false
+- param2.counter = 0 (carbon only, used for debugging)
+- param2.currentStage (carbon only, param2 variable for Game.GetStoryLineProgression())
+
+----- taken from NFSC PS2 Demo bytecode. DISCLAIMER: Haven't tested to see if they still work in final release.
+- param2.movies = {}
+- param2.movies.area = {tuner = {}, muscle = {}, exotic = {}, casino = {}}
+- param2.movies.area.tuner[3] = "ealogo"
+- param2.movies.area.muscle[3] = "ealogo"
+- param2.movies.area.exotic[3] = "ealogo"
+- param2.movies.area.casino[3] = "ealogo"
+- param2.movies.overall = {}
+- param2.movies.overall[5] = "Seq05_Safehouse"
 
 Carbon Cross Chase param2 functions:
 - param2.HUStartTime
@@ -315,6 +331,8 @@ For example, MSetCopAutoSpawnMode isn't meant to be used as a message_id.
 - MAudioReflection    813473825
 - MAIEngineRev 4083327086 (unsure how to use, not recommended to use for message_id)
 - MAcceptEnterCareerEvent 2941011528
+- MDumpCareerInfo 2169087194 (Present in NFS Carbon PS2 demo, cut from final release. Used for debugging during development.)
+- MEnterCareerRaceIntroFlow 3576315761 (Present in NFS Carbon PS2 demo, cut from final release.)
 
 Compiler input arguments:
   -        process stdin
@@ -400,6 +418,12 @@ EAddSMS(id number)                   : Adds an SMS of the specified id and shows
 Bin.GetNumRacesWon(BinIndex)         : Returns the number of races won for a specified race bin.
 Bin.GetNumChallengesPassed(BinIndex) : Returns the number of open world milestones that have been completed for a specified race bin.
 Game.GetPlayerBounty()               : Returns the players total amount of bounty for their profile. 
+Game.ClearCareerVehicle()
+Game.GetStoryLineProgression()
+Game.AddvanceStoryLineProgression()
+Game.GetWonAttackRacesinArea(AreaName) : Returns the number of races won for a specified map area. Similar to Bin.GetNumRacesWon() but for carbon's map area system.
+Game.GetOverAllWonAttackRaces()      : Returns the total number of races won across all areas. Events must be part of a territory zone to count.   
+
 
 [ CATEGORY: NETWORK & SYSTEMS ]
 Game.IsOnlineGame()                  : Returns true if the current session is an online match.
