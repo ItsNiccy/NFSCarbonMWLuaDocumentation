@@ -10,7 +10,16 @@ All that is asked, is that you be kind and respectful.
 
 If there is ANYTHING, you would like to add, feel free to do so.
 If you've made any contributions, just add your name to the other contributors section.
-This is currently nowhere near complete, tonnes more still needs to be added.
+This is currently nowhere near complete, more still needs to be added.
+
+Tools Used:
+NFSMW Lua Toolkit by VAX325
+    https://github.com/VAX325/NFS-MW-Lua-Toolkit
+
+NFSLuaTools by BlueSkyWestSide
+    https://github.com/bluesky-dev12/NFSLuaTools
+
+unluac
 
 Resources used for the documentation:
 - The results of FAFO.
@@ -57,8 +66,11 @@ NOTE:
 You need to compile them into a .blob (Binary Large Object) file in order to add them through OGVI.
 Otherwise you can technically compile them into whatever file format you want (for example: .bin)
 
-decompile command format:
+decompile command format (NFSMW):
 luadec -f -o x.lua x.blob
+
+decompile command format (Carbon/Exient Undercover) (BlueSkyWestSide NFSLuaTools):
+luadec --handler -f -o x.lua x.blob
 
 Alternatively, you can simply drag and drop a bytecode onto the decompiler executeable.
 
@@ -91,24 +103,24 @@ You can use the following tools.
 message_id:
 these are Vlt Memory DEC of Mxxxxxxxxxx functions (for example, MTriggerEnter).
 These are internal functions that basically determine what the script will be for.
-If you're, for example, making a takedown style gamemode, you will need to put
-MNotifyVehicleDestroyed into NFS-Hasher v3 and get the VLT Memory DEC, which will be 83708443.
+If you're, for example, making a takedown style gamemode, you will need to get the
+VLT Memory DEC of MNotifyVehicleDestroyed, which is 83708443.
 83708443 is what you put as the message_id.
 Basically, it will notify whenever a vehicle has been destroyed, and execute any script logic.
 
 The parameters:
 
 With NFSMW/Carbon Lua there are 3 parameters:
-- param0.
-- param1.
-- param2.
+- param0
+- param1
+- param2
 
 In the script, you can re-name them to whatever you want, 
 AS LONG as it follows the same order of (param0, param1, param2), 
 and they are also applied to functions within the script.
 for example:
-h_VLTMEMORYHEX = function(vault, specific, context)
 h_VLTMEMORYHEX = function(vault, nikki, darius)
+h_VLTMEMORYHEX = function(this, message, context)
 
 param0 refers to gameplay vault (vlt) fields and data.
 for example param0.MilestoneName or param0.ThreshholdValue.
@@ -140,7 +152,6 @@ Some param1 functions include (not all of them, as idk all of them):
 - param1.IsActivelyRacing
 - param1.TimeRemaining
 - param1.AreaName (carbon only)
-
 
 Some param2 functions include (not all of them, as idk all of them):
 - param2.PlayerHasWon = true/false
@@ -191,7 +202,7 @@ Some param2 functions include (not all of them, as idk all of them):
 - param2.counter = 0 (carbon only, used for debugging)
 - param2.currentStage (carbon only, param2 variable for Game.GetStoryLineProgression())
 
------ taken from NFSC PS2 Demo bytecode. DISCLAIMER: Haven't tested to see if they still work in final release.
+----- taken from NFSC PS2 Demo bytecode.
 - param2.movies = {}
 - param2.movies.area = {tuner = {}, muscle = {}, exotic = {}, casino = {}}
 - param2.movies.area.tuner[3] = "ealogo"
@@ -350,6 +361,9 @@ Decompiler input arguments:
   -o       sets the output file name (default: 'luadec.out')
   -p       only parse file for errors
   -s       strips debug info
+  --handler       preserve the original h_XXXXXXXX export name (NFSLuaTools decompiler only)
+  --handler name  use an explicit readable handler alias (NFSLuaTools decompiler only)
+  --raw-params    show stripped handler parameters as param0/param1/param2 (NFSLuaTools decompiler only)
   -v       shows luadec version
   --       stop handling options
 
@@ -423,7 +437,6 @@ Game.GetStoryLineProgression()
 Game.AddvanceStoryLineProgression()
 Game.GetWonAttackRacesinArea(AreaName) : Returns the number of races won for a specified map area. Similar to Bin.GetNumRacesWon() but for carbon's map area system.
 Game.GetOverAllWonAttackRaces()      : Returns the total number of races won across all areas. Events must be part of a territory zone to count.   
-
 
 [ CATEGORY: NETWORK & SYSTEMS ]
 Game.IsOnlineGame()                  : Returns true if the current session is an online match.
